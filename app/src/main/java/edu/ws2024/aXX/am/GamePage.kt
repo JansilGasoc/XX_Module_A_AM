@@ -54,12 +54,12 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
     val gameState = remember { GameState() }
 
     // Game constants
-    val defaultSlopeAngle = 10f
+    val defaultSlopeAngle = 15f
     val skierWidth = with(density) { 120.dp.toPx() }
     val skierHeight = with(density) { 140.dp.toPx() }
     val obstacleSpeed = 420f
-    val coinSpeed = 460f
-    val treeSpeed = 240f
+    val coinSpeed = 360f
+    val treeSpeed = 340f
     val slopeHeightDp = 100.dp
     val slopeHeightPx = with(density) { slopeHeightDp.toPx() }
     val slopeBaseY = screenHeightPx - slopeHeightPx / 2f
@@ -124,7 +124,7 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
 
     // Spawn entities
     LaunchedEffect(Unit) {
-        val frameMs = 16L
+        val frameMs = 15L
         var spawnTimer = 0L
         var nextSpawnDelay = Random.nextLong(1500, 2500)
 
@@ -152,7 +152,7 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
 
         while (true) {
             if (!gameState.isPaused && !gameState.showGameOver) {
-                val dt = frameMs / 1000f
+                val dt = frameMs / 900f
 
                 // Tree movement
                 gameState.treeOffsetX -= treeSpeed * gameState.speedMultiplier * dt
@@ -257,7 +257,8 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                     gameState.speedMultiplier = 2.6f
                     coroutineScope.launch {
                         delay(380L)
-                        gameState.speedMultiplier = (gameState.slopeAngle / defaultSlopeAngle).coerceIn(0f, 1f)
+                        gameState.speedMultiplier =
+                            (gameState.slopeAngle / defaultSlopeAngle).coerceIn(0f, 1f)
                     }
                     dragStart = null
                 }
@@ -265,7 +266,10 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                 if (dx > 160f && abs(dy) < 120f) {
                     // Quit
                     gameState.isPaused = true
-                    try { audioManager.pauseBgm() } catch (_: Exception) {}
+                    try {
+                        audioManager.pauseBgm()
+                    } catch (_: Exception) {
+                    }
                     gameState.showQuitDialog = true
                     dragStart = null
                 }
@@ -273,7 +277,9 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
         }
 
     // UI
-    Box(modifier = Modifier.fillMaxSize().then(gestureModifier)) {
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .then(gestureModifier)) {
         // Background
         Image(
             painter = painterResource(id = R.drawable.bg),
@@ -307,6 +313,16 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                 .align(Alignment.BottomStart),
             contentScale = ContentScale.FillBounds
         )
+        Image(
+            painter = painterResource(id = R.drawable.trees),
+            contentDescription = null,
+            modifier = Modifier
+                .offset { IntOffset(((gameState.treeOffsetX + screenWidthPx) / 2f).toInt(), 0) }
+                .width(treeDpWidth)
+                .height(treeDpHeight)
+                .align(Alignment.BottomStart),
+            contentScale = ContentScale.FillBounds
+        )
 
         // Slope (Trapezoid Shape)
         Canvas(
@@ -320,7 +336,7 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
 
             val path = Path().apply {
                 moveTo(0f, 0f)
-                lineTo(width, 50f)
+                lineTo(width, 70f)
                 lineTo(width, height)
                 lineTo(0f, height)
                 close()
@@ -336,7 +352,8 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                 contentDescription = "Obstacle",
                 modifier = Modifier
                     .offset { IntOffset(o.x.toInt(), o.y.toInt()) }
-                    .size(64.dp)
+                    .size(54.dp)
+                    .padding(bottom = 20.dp)
             )
         }
 
@@ -346,14 +363,17 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                 painter = painterResource(id = R.drawable.coin),
                 contentDescription = "Coin",
                 modifier = Modifier
+
                     .offset { IntOffset(c.x.toInt(), c.y.toInt()) }
                     .size(48.dp)
+                    .padding(bottom = 20.dp)
             )
         }
 
         // Skier
         Box(
             modifier = Modifier
+                .padding(bottom = 40.dp)
                 .offset {
                     IntOffset(
                         (skierBaseX - skierWidth / 2f).toInt(),
@@ -361,19 +381,22 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
                     )
                 }
                 .size(120.dp)
+
         ) {
             // Base skier (no tint)
             Image(
                 painter = painterResource(id = R.drawable.skiing_person_base),
                 contentDescription = "Skier Base",
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().
+                padding(bottom= 20.dp)
             )
 
             // Jacket only (tinted)
             Image(
                 painter = painterResource(id = R.drawable.skiing_person_jacket),
                 contentDescription = "Jacket",
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(bottom = 20.dp),
+
                 colorFilter = ColorFilter.tint(
                     jacketColor,
                     blendMode = androidx.compose.ui.graphics.BlendMode.SrcIn
@@ -386,7 +409,7 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .padding(top=20.dp)
+                .padding(top = 20.dp)
                 .padding(10.dp)
         ) {
             Text(text = playerName, color = Color.Black,
@@ -424,7 +447,7 @@ fun GamePage(navController: NavHostController, playerName: String, jacketColor: 
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(10.dp)
-                .padding(top=20.dp)
+                .padding(top = 20.dp)
                 .background(color = Color.Transparent)
                 .padding(12.dp)
         ) {
